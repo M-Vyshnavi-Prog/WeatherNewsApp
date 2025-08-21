@@ -1,63 +1,27 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, FlatList, ActivityIndicator, RefreshControl, StyleSheet, Button } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, ActivityIndicator, Button, StyleSheet, Switch } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useApp } from '../context/AppProvider';
 import { getForecast } from '../api/weather';
-import { getTopHeadlines, searchNews } from '../api/news';
-import { ForecastItem, WeatherSummary, Article } from '../types';
 import WeatherCard from '../components/WeatherCard';
-import NewsCard from '../components/NewsCard';
-import { keywordsForMood, moodFromTemp } from '../utils/weatherFilter';
+import { ForecastItem, WeatherSummary, Units } from '../types';
 
 export default function HomeScreen() {
   const nav = useNavigation<any>();
-  const { units, categories, location, loadingLocation, error } = useApp();
+  const { units, setUnits, location, loadingLocation, error } = useApp();
+
   const [summary, setSummary] = useState<WeatherSummary | null>(null);
   const [forecast, setForecast] = useState<ForecastItem[]>([]);
-  const [news, setNews] = useState<Article[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [refreshing, setRefreshing] = useState<boolean>(false);
-  const [newsInfo, setNewsInfo] = useState<string>('');
 
-  const tempInCelsius = useMemo(() => {
-    if (!summary) return null;
-    return units === 'metric' ? summary.temp : (summary.temp - 32) * 5/9;
-  }, [summary, units]);
-
-  async function loadAll() {
+  // Load weather data
+  async function loadWeather() {
     if (!location) return;
     setLoading(true);
     try {
       const { summary, forecast } = await getForecast(location.lat, location.lon, units);
       setSummary(summary);
       setForecast(forecast);
-
-      
-      const mood = moodFromTemp(units === 'metric' ? summary.temp : (summary.temp - 32) * 5/9);
-      const keywords = keywordsForMood(mood);
-      setNewsInfo(`Mood: ${mood} → keywords: ${keywords.join(' | ')}`);
-
-  
-      let collected: Article[] = [];
-      for (const q of keywords) {
-        const results = await searchNews(q);
-        collected = collected.concat(results);
-      }
-      if (collected.length === 0) {
-
-        const results = await Promise.all(categories.map((c) => getTopHeadlines(c)));
-        collected = results.flat();
-      }
-
-
-      const seen = new Set<string>();
-      const deduped = collected.filter(a => {
-        if (!a.title || seen.has(a.title)) return false;
-        seen.add(a.title);
-        return true;
-      });
-
-      setNews(deduped.slice(0, 30));
     } catch (e) {
       console.error(e);
     } finally {
@@ -66,15 +30,11 @@ export default function HomeScreen() {
   }
 
   useEffect(() => {
-    loadAll();
-    
+    loadWeather();
   }, [units, JSON.stringify(location)]);
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadAll();
-    setRefreshing(false);
-  };
+  // Toggle units between metric and imperial
+  const toggleUnit = () => setUnits(units === 'metric' ? 'imperial' : 'metric');
 
   if (loadingLocation) {
     return (
@@ -89,7 +49,6 @@ export default function HomeScreen() {
     return (
       <View style={styles.center}>
         <Text style={{ color: 'red' }}>{error}</Text>
-        <Button title="Open Settings" onPress={() => nav.navigate('Settings')} />
       </View>
     );
   }
@@ -97,19 +56,21 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Weather & News</Text>
-        <Button title="Settings" onPress={() => nav.navigate('Settings')} />
+        <Text style={styles.title}>Weather</Text>
       </View>
+
+      {/* Unit toggle */}
+      <View style={styles.unitRow}>
+        <Text>Metric (°C)</Text>
+        <Switch value={units === 'imperial'} onValueChange={toggleUnit} />
+        <Text>Imperial (°F)</Text>
+      </View>
+
       {loading && <ActivityIndicator style={{ marginVertical: 8 }} />}
       {summary && <WeatherCard summary={summary} forecast={forecast} />}
-      {tempInCelsius != null && <Text style={styles.note}>{newsInfo}</Text>}
-      <FlatList
-        data={news}
-        keyExtractor={(item, idx) => item.url + String(idx)}
-        renderItem={({ item }) => <NewsCard article={item} />}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        ListEmptyComponent={!loading ? <Text>No news found.</Text> : null}
-      />
+
+      {/* Navigate to News */}
+      <Button title="Go to News" onPress={() => nav.navigate('News')} />
     </View>
   );
 }
@@ -119,6 +80,5 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   title: { fontSize: 22, fontWeight: '800' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  note: { fontSize: 12, color: '#555', marginBottom: 8 },
+  unitRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
 });
-
