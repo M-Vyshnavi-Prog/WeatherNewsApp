@@ -1,11 +1,3 @@
-/**
- * Weather-based news filtering logic.
- * cold  -> 'depressing' topics
- * hot   -> 'fear' topics
- * cool  -> 'winning'/'happiness' topics
- *
- * Note: NewsAPI doesn't provide sentiment directly, so we approximate by querying keywords.
- */
 
 export type Mood = 'cold' | 'hot' | 'cool';
 

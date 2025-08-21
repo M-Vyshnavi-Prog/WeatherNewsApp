@@ -39,7 +39,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     AsyncStorage.setItem('categories', JSON.stringify(categories));
   }, [categories]);
 
-  // Get location
+  
   useEffect(() => {
     (async () => {
       setLoadingLocation(true);

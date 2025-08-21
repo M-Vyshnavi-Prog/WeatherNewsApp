@@ -32,24 +32,24 @@ export default function HomeScreen() {
       setSummary(summary);
       setForecast(forecast);
 
-      // Weather-based filtering
+      
       const mood = moodFromTemp(units === 'metric' ? summary.temp : (summary.temp - 32) * 5/9);
       const keywords = keywordsForMood(mood);
       setNewsInfo(`Mood: ${mood} → keywords: ${keywords.join(' | ')}`);
 
-      // Try keyword-based searches first; if empty fallback to category headlines
+  
       let collected: Article[] = [];
       for (const q of keywords) {
         const results = await searchNews(q);
         collected = collected.concat(results);
       }
       if (collected.length === 0) {
-        // fallback to preferred categories
+
         const results = await Promise.all(categories.map((c) => getTopHeadlines(c)));
         collected = results.flat();
       }
 
-      // de-dup by title
+
       const seen = new Set<string>();
       const deduped = collected.filter(a => {
         if (!a.title || seen.has(a.title)) return false;
@@ -67,7 +67,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     loadAll();
-    // re-run when units or location changes
+    
   }, [units, JSON.stringify(location)]);
 
   const onRefresh = async () => {

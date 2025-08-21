@@ -20,7 +20,7 @@ export async function getForecast(lat: number, lon: number, units: Units) {
     description: today.weather[0].description,
     icon: today.weather[0].icon,
   };
-  // Reduce to one item per day (every ~24h: pick every 8th entry)
+  
   const forecast: ForecastItem[] = data.list
     .filter((_, idx) => idx % 8 === 0)
     .slice(0, 5)

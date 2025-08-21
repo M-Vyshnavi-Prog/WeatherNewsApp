@@ -3,7 +3,7 @@ import { Article } from '../types';
 
 const NEWS_API_KEY = '46773817f758452b9932bdd67fd32d6b'; 
 
-// Define the expected NewsAPI response type
+
 interface NewsApiResponse {
   articles: {
     title: string;
@@ -20,7 +20,7 @@ export async function getTopHeadlines(category?: string): Promise<Article[]> {
 
   const url = `https://newsapi.org/v2/top-headlines?${params.toString()}&apiKey=${NEWS_API_KEY}`;
 
-  // 👇 Tell axios what type to expect
+  
   const { data } = await axios.get<NewsApiResponse>(url);
 
   return (data.articles || []).map((a) => ({
